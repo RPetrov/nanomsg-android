@@ -1,4 +1,4 @@
-# manomsg-android
+# nanomsg-android
 Simple project to build manomsg library for Android 
 
 
