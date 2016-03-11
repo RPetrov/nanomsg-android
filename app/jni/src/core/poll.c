@@ -127,6 +127,38 @@ int nn_poll (struct nn_pollfd *fds, int nfds, int timeout)
 #include <poll.h>
 #include <stddef.h>
 
+#include <android/log.h>
+
+#define  LOG_TAG    "someTag"
+
+#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+#define  LOGW(...)  __android_log_print(ANDROID_LOG_WARN,LOG_TAG,__VA_ARGS__)
+#define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
+#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+
+
+int safe_poll(struct pollfd *ufds, nfds_t nfds, int timeout)
+{
+	while (1) {
+		int n = poll(ufds, nfds, timeout);
+		if (n >= 0)
+			return n;
+		/* Make sure we inch towards completion */
+		if (timeout > 0)
+			timeout--;
+		/* E.g. strace causes poll to return this */
+		if (errno == EINTR)
+			continue;
+		/* Kernel is very low on memory. Retry. */
+		/* I doubt many callers would handle this correctly! */
+		if (errno == ENOMEM)
+			continue;
+		LOGD("safe_poll");
+		return n;
+	}
+}
+
+
 int nn_poll (struct nn_pollfd *fds, int nfds, int timeout)
 {
     int rc;
@@ -137,10 +169,15 @@ int nn_poll (struct nn_pollfd *fds, int nfds, int timeout)
     size_t sz;
     struct pollfd *pfd;
 
+    
+    LOGD("call nn_poll!!");
+    
+    
     /*  Construct a pollset to be used with OS-level 'poll' function. */
     pfd = nn_alloc (sizeof (struct pollfd) * nfds * 2, "pollset");
     alloc_assert (pfd);
     pos = 0;
+     LOGD("call nn_poll!!,nfds = %d", nfds);
     for (i = 0; i != nfds; ++i) {
         if (fds [i].events & NN_POLLIN) {
             sz = sizeof (fd);
@@ -148,6 +185,7 @@ int nn_poll (struct nn_pollfd *fds, int nfds, int timeout)
             if (nn_slow (rc < 0)) {
                 nn_free (pfd);
                 errno = -rc;
+		LOGD("return   -1!!!");
                 return -1;
             }
             nn_assert (sz == sizeof (fd));
@@ -161,6 +199,7 @@ int nn_poll (struct nn_pollfd *fds, int nfds, int timeout)
             if (nn_slow (rc < 0)) {
                 nn_free (pfd);
                 errno = -rc;
+		LOGD("errno = -rc;");
                 return -1;
             }
             nn_assert (sz == sizeof (fd));
@@ -171,17 +210,26 @@ int nn_poll (struct nn_pollfd *fds, int nfds, int timeout)
     }    
 
     /*  Do the polling itself. */
-    rc = poll (pfd, pos, timeout);
+      LOGD("call nn_poll!!,    %d, %d", pos, timeout);
+    rc = safe_poll (pfd, pos, timeout);
+     LOGD("call nn_poll!!,   rc = %d", rc);
     if (nn_slow (rc <= 0)) {
         res = errno;
         nn_free (pfd);
         errno = res;
+	LOGD("nn_slow (rc <= 0, erno = %d, ", res);
+	LOGD("nn_slow (rc <= 0, erno = %d, ", errno == EINTR);
+	LOGD("nn_slow (rc <= 0, erno = %d, ", errno == EFAULT);
+		LOGD("nn_slow (rc <= 0, erno = %d, ", errno == EINVAL);
+			LOGD("nn_slow (rc <= 0, erno = %d, ", errno == ENOMEM);
         return rc;
+
     }
 
     /*  Move the results from OS-level poll to nn_poll's pollset. */
     res = 0;
     pos = 0;
+     LOGD("call nn_poll!!,nfds2 = %d", nfds);
     for (i = 0; i != nfds; ++i) {
         fds [i].revents = 0;
         if (fds [i].events & NN_POLLIN) {
@@ -199,6 +247,7 @@ int nn_poll (struct nn_pollfd *fds, int nfds, int timeout)
     }
 
     nn_free (pfd);
+    LOGD( "nn_poll: %d", res );
     return res;
 }
 

@@ -65,6 +65,17 @@
 #define NN_BTCP_SRC_ATCP 2
 #define NN_BTCP_SRC_RECONNECT_TIMER 3
 
+
+#include <android/log.h>
+
+#define  LOG_TAG    "someTag"
+
+#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+#define  LOGW(...)  __android_log_print(ANDROID_LOG_WARN,LOG_TAG,__VA_ARGS__)
+#define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
+#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+
+
 struct nn_btcp {
 
     /*  The state machine. */
@@ -474,9 +485,11 @@ static void nn_btcp_start_listening (struct nn_btcp *self)
     }
 
     rc = nn_usock_bind (&self->usock, (struct sockaddr*) &ss, (size_t) sslen);
+    LOGD("nn_usock_bind, rc = %d", rc);
     if (nn_slow (rc < 0)) {
         nn_usock_stop (&self->usock);
         self->state = NN_BTCP_STATE_CLOSING;
+	LOGW("nn_slow (rc < 0)");
         return;
     }
 
@@ -484,6 +497,7 @@ static void nn_btcp_start_listening (struct nn_btcp *self)
     if (nn_slow (rc < 0)) {
         nn_usock_stop (&self->usock);
         self->state = NN_BTCP_STATE_CLOSING;
+	LOGW("lf->state = NN_BTCP_STATE_CLOSING;");
         return;
     }
     nn_btcp_start_accepting(self);

@@ -42,6 +42,16 @@
 #include <unistd.h>
 #endif
 
+
+#include <android/log.h>
+
+#define  LOG_TAG    "someTag"
+
+#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+#define  LOGW(...)  __android_log_print(ANDROID_LOG_WARN,LOG_TAG,__VA_ARGS__)
+#define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
+#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+
 enum echo_format {
     NN_NO_ECHO,
     NN_ECHO_RAW,
@@ -314,7 +324,7 @@ void nn_assert_errno (int flag, char *description)
 
     if (!flag) {
         err = errno;
-        fprintf (stderr, "%s: %s\n", description, nn_strerror (err));
+        LOGI (stderr, "%s: %s\n", description, nn_strerror (err));
         exit (3);
     }
 }
@@ -403,24 +413,24 @@ void nn_print_message (nn_options_t *options, char *buf, int buflen)
         for (; buflen > 0; --buflen, ++buf) {
             switch (*buf) {
             case '\n':
-                fprintf (stdout, "\\n");
+                LOGI (LOG_TAG, "\\n");
                 break;
             case '\r':
-                fprintf (stdout, "\\r");
+                LOGI (LOG_TAG, "\\r");
                 break;
             case '\\':
             case '\"':
-                fprintf (stdout, "\\%c", *buf);
+                LOGI (LOG_TAG, "\\%c", *buf);
                 break;
             default:
                 if (isprint (*buf)) {
                     fputc (*buf, stdout);
                 } else {
-                    fprintf (stdout, "\\x%02x", (unsigned char)*buf);
+                    LOGI (LOG_TAG, "\\x%02x", (unsigned char)*buf);
                 }
             }
         }
-        fprintf (stdout, "\"\n");
+        LOGI (LOG_TAG, "\"\n");
         break;
     case NN_ECHO_MSGPACK:
         if (buflen < 256) {
@@ -444,9 +454,9 @@ void nn_print_message (nn_options_t *options, char *buf, int buflen)
     case NN_ECHO_HEX:
         fputc ('"', stdout);
         for (; buflen > 0; --buflen, ++buf) {
-             fprintf (stdout, "\\x%02x", (unsigned char)*buf);
+             LOGI (LOG_TAG, "\\x%02x", (unsigned char)*buf);
         }
-        fprintf (stdout, "\"\n");
+        LOGI (LOG_TAG, "\"\n");
         break;
     
     }
@@ -484,7 +494,7 @@ void nn_send_loop (nn_options_t *options, int sock)
             options->data_to_send.data, options->data_to_send.length,
             0);
         if (rc < 0 && errno == EAGAIN) {
-            fprintf (stderr, "Message not sent (EAGAIN)\n");
+            LOGI (LOG_TAG, "Message not sent (EAGAIN)\n");
         } else {
             nn_assert_errno (rc >= 0, "Can't send");
         }
@@ -538,7 +548,7 @@ void nn_rw_loop (nn_options_t *options, int sock)
             options->data_to_send.data, options->data_to_send.length,
             0);
         if (rc < 0 && errno == EAGAIN) {
-            fprintf (stderr, "Message not sent (EAGAIN)\n");
+            LOGI (stderr, "Message not sent (EAGAIN)\n");
         } else {
             nn_assert_errno (rc >= 0, "Can't send");
         }
@@ -596,7 +606,7 @@ void nn_resp_loop (nn_options_t *options, int sock)
             options->data_to_send.data, options->data_to_send.length,
             0);
         if (rc < 0 && errno == EAGAIN) {
-            fprintf (stderr, "Message not sent (EAGAIN)\n");
+            LOGI (stderr, "Message not sent (EAGAIN)\n");
         } else {
             nn_assert_errno (rc >= 0, "Can't send");
         }

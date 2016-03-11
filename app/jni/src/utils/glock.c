@@ -54,13 +54,25 @@ void nn_glock_unlock (void)
 
 #include <pthread.h>
 
+#include <android/log.h>
+
+#define  LOG_TAG    "someTag"
+
+#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+#define  LOGW(...)  __android_log_print(ANDROID_LOG_WARN,LOG_TAG,__VA_ARGS__)
+#define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
+#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+
 static pthread_mutex_t nn_glock_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void nn_glock_lock (void)
 {
     int rc;
+    
+   
 
     rc = pthread_mutex_lock (&nn_glock_mutex);
+     LOGD( "nn_glock_lock, rc = %d", rc );
     errnum_assert (rc == 0, rc);
 }
 
@@ -69,6 +81,8 @@ void nn_glock_unlock (void)
     int rc;
 
     rc = pthread_mutex_unlock (&nn_glock_mutex);
+    
+     LOGD( "nn_glock_unlock, rc = %d", rc );
     errnum_assert (rc == 0, rc);
 }
 

@@ -90,6 +90,16 @@
 #include <unistd.h>
 #endif
 
+
+#include <android/log.h>
+
+#define  LOG_TAG    "someTag"
+
+#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+#define  LOGW(...)  __android_log_print(ANDROID_LOG_WARN,LOG_TAG,__VA_ARGS__)
+#define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
+#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+
 /*  Max number of concurrent SP sockets. */
 #define NN_MAX_SOCKETS 512
 
@@ -185,7 +195,11 @@ static void nn_global_shutdown (struct nn_fsm *self,
 
 int nn_errno (void)
 {
-    return nn_err_errno ();
+    int err =   nn_err_errno ();
+    
+   LOGD( "Errorrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr: %d", err );
+    
+    return err;
 }
 
 const char *nn_strerror (int errnum)
@@ -627,13 +641,24 @@ int nn_getsockopt (int s, int level, int option, void *optval,
 
 int nn_bind (int s, const char *addr)
 {
+    LOGD( "nn_bind!!!!!!!!!!!!!!!!   %d", s );
+  
     int rc;
 
     NN_BASIC_CHECKS;
 
     nn_glock_lock();
+    
+      LOGD( " --- after nn_glock_lock");
+    
     rc = nn_global_create_ep (s, addr, 1);
+    
+        LOGD( "--- rc =    %d, EINVAL = %d", rc, EPERM );
+    
     nn_glock_unlock();
+    
+
+    
     if (rc < 0) {
         errno = -rc;
         return -1;
@@ -1169,9 +1194,17 @@ static int nn_global_create_ep (int s, const char *addr, int bind)
 
     /*  Check whether address is valid. */
     if (!addr)
-        return -EINVAL;
+    {
+      LOGI(" return -EINVAL;");
+       return -EINVAL;
+    }
+       
     if (strlen (addr) >= NN_SOCKADDR_MAX)
-        return -ENAMETOOLONG;
+    {
+        LOGI("ENAMETOOLONG");
+       return -ENAMETOOLONG;
+    }
+       
 
     /*  Separate the protocol and the actual address. */
     proto = addr;
@@ -1179,7 +1212,11 @@ static int nn_global_create_ep (int s, const char *addr, int bind)
     if (!delim)
         return -EINVAL;
     if (delim [1] != '/' || delim [2] != '/')
-        return -EINVAL;
+    {
+       LOGI("delim [1] != '/' || delim [2] != '/'");
+      return -EINVAL;
+    }
+        
     protosz = delim - addr;
     addr += protosz + 3;
 
@@ -1197,11 +1234,13 @@ static int nn_global_create_ep (int s, const char *addr, int bind)
 
     /*  The protocol specified doesn't match any known protocol. */
     if (!tp) {
+         LOGI("EPROTONOSUPPORT");
         return -EPROTONOSUPPORT;
     }
 
     /*  Ask the socket to create the endpoint. */
     rc = nn_sock_add_ep (self.socks [s], tp, bind, addr);
+    LOGI("nn_global_create_ep, rc = %d", rc);
     return rc;
 }
 

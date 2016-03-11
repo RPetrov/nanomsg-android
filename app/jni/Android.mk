@@ -39,8 +39,11 @@ LOCAL_SRC_FILES := src/core/epbase.c src/core/sock.c src/core/poll.c	\
     src/utils/mutex.c src/utils/msg.c src/utils/clock.c			\
     src/utils/queue.c src/utils/chunk.c src/utils/efd.c			\
     src/utils/hash.c src/utils/alloc.c src/utils/glock.c		\
-    src/utils/sleep.c src/utils/chunkref.c src/utils/sem.c
+    src/utils/sleep.c src/utils/chunkref.c src/utils/sem.c \
+    src/core/nanow.c
 
+LOCAL_LDLIBS    := -llog    
+    
 
 LOCAL_CFLAGS :=  \
 	-DNN_HAVE_EVENTFD \

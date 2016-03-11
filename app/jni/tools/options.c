@@ -31,6 +31,15 @@
 #include <errno.h>
 #include <ctype.h>
 
+#include <android/log.h>
+
+#define  LOG_TAG    "someTag"
+
+#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+#define  LOGW(...)  __android_log_print(ANDROID_LOG_WARN,LOG_TAG,__VA_ARGS__)
+#define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
+#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+
 struct nn_parse_context {
     /*  Initial state  */
     struct nn_commandline *def;
@@ -75,7 +84,7 @@ static void nn_print_usage (struct nn_parse_context *ctx, FILE *stream)
     int first;
     struct nn_option *opt;
 
-    fprintf (stream, "    %s ", ctx->argv[0]);
+    LOGI (LOG_TAG, "    %s ", ctx->argv[0]);
 
     /* Print required options (long names)  */
     first = 1;
@@ -86,14 +95,14 @@ static void nn_print_usage (struct nn_parse_context *ctx, FILE *stream)
         if (opt->mask_set & ctx->requires) {
             if (first) {
                 first = 0;
-                fprintf (stream, "{--%s", opt->longname);
+                LOGI (LOG_TAG, "{--%s", opt->longname);
             } else {
-                fprintf (stream, "|--%s", opt->longname);
+                LOGI (LOG_TAG, "|--%s", opt->longname);
             }
         }
     }
     if (!first) {
-        fprintf (stream, "} ");
+        LOGI (LOG_TAG, "} ");
     }
 
     /* Print flag short options */
@@ -107,14 +116,14 @@ static void nn_print_usage (struct nn_parse_context *ctx, FILE *stream)
         if (opt->shortname && !nn_has_arg (opt)) {
             if (first) {
                 first = 0;
-                fprintf (stream, "[-%c", opt->shortname);
+                LOGI (LOG_TAG, "[-%c", opt->shortname);
             } else {
-                fprintf (stream, "%c", opt->shortname);
+                LOGI (LOG_TAG, "%c", opt->shortname);
             }
         }
     }
     if (!first) {
-        fprintf (stream, "] ");
+        LOGI (LOG_TAG, "] ");
     }
 
     /* Print short options with arguments */
@@ -125,27 +134,27 @@ static void nn_print_usage (struct nn_parse_context *ctx, FILE *stream)
         if (opt->mask_set & ctx->requires)
             continue;  /* already printed */
         if (opt->shortname && nn_has_arg (opt) && opt->metavar) {
-            fprintf (stream, "[-%c %s] ", opt->shortname, opt->metavar);
+            LOGI (LOG_TAG, "[-%c %s] ", opt->shortname, opt->metavar);
         }
     }
 
-    fprintf (stream, "[options] \n");  /* There may be long options too */
+    LOGI (LOG_TAG, "[options] \n");  /* There may be long options too */
 }
 
 static char *nn_print_line (FILE *out, char *str, size_t width)
 {
     int i;
     if (strlen (str) < width) {
-        fprintf (out, "%s", str);
+        LOGI (LOG_TAG, "%s", str);
         return "";
     }
     for (i = width; i > 1; --i) {
         if (isspace (str[i])) {
-            fprintf (out, "%.*s", i, str);
+            LOGI (LOG_TAG, "%.*s", i, str);
             return str + i + 1;
         }
     }  /* no break points, just print as is */
-    fprintf (out, "%s", str);
+    LOGI (LOG_TAG, "%s", str);
     return "";
 }
 
@@ -157,9 +166,9 @@ static void nn_print_help (struct nn_parse_context *ctx, FILE *stream)
     char *last_group;
     char *cursor;
 
-    fprintf (stream, "Usage:\n");
+    LOGI (LOG_TAG, "Usage:\n");
     nn_print_usage (ctx, stream);
-    fprintf (stream, "\n%s\n", ctx->def->short_description);
+    LOGI (LOG_TAG, "\n%s\n", ctx->def->short_description);
 
     last_group = NULL;
     for (i = 0;; ++i) {
@@ -169,22 +178,22 @@ static void nn_print_help (struct nn_parse_context *ctx, FILE *stream)
         if (!last_group || last_group != opt->group ||
             strcmp (last_group, opt->group))
         {
-            fprintf (stream, "\n");
-            fprintf (stream, "%s:\n", opt->group);
+            LOGI (LOG_TAG, "\n");
+            LOGI (LOG_TAG, "%s:\n", opt->group);
             last_group = opt->group;
         }
-        fprintf (stream, " --%s", opt->longname);
+        LOGI (LOG_TAG, " --%s", opt->longname);
         optlen = 3 + strlen (opt->longname);
         if (opt->shortname) {
-            fprintf (stream, ",-%c", opt->shortname);
+            LOGI (LOG_TAG, ",-%c", opt->shortname);
             optlen += 3;
         }
         if (nn_has_arg (opt)) {
             if (opt->metavar) {
-                fprintf (stream, " %s", opt->metavar);
+                LOGI (LOG_TAG, " %s", opt->metavar);
                 optlen += strlen (opt->metavar) + 1;
             } else {
-                fprintf (stream, " ARG");
+                LOGI (LOG_TAG, " ARG");
                 optlen += 4;
             }
         }
@@ -195,10 +204,10 @@ static void nn_print_help (struct nn_parse_context *ctx, FILE *stream)
             cursor = opt->description;
         }
         while (*cursor) {
-            fprintf (stream, "\n                        ");
+            LOGI (LOG_TAG, "\n                        ");
             cursor = nn_print_line (stream, cursor, 80-24);
         }
-        fprintf (stream, "\n");
+        LOGI (LOG_TAG, "\n");
     }
 }
 
@@ -220,15 +229,15 @@ static void nn_print_option (struct nn_parse_context *ctx, int opt_index,
             olen = (oend - ousage);
         }
         if (olen != strlen (opt->longname)+2) {
-            fprintf (stream, " %.*s[%s] ",
+            LOGI (LOG_TAG, " %.*s[%s] ",
                 (int)olen, ousage, opt->longname + (olen-2));
         } else {
-            fprintf (stream, " %s ", ousage);
+            LOGI (LOG_TAG, " %s ", ousage);
         }
     } else if (ousage == ctx->argv[0]) {  /* Binary name */
-        fprintf (stream, " %s (executable) ", ousage);
+        LOGI (LOG_TAG, " %s (executable) ", ousage);
     } else {  /* Short option */
-        fprintf (stream, " -%c (--%s) ",
+        LOGI (LOG_TAG, " -%c (--%s) ",
             *ousage, opt->longname);
     }
 }
@@ -236,15 +245,15 @@ static void nn_print_option (struct nn_parse_context *ctx, int opt_index,
 static void nn_option_error (char *message, struct nn_parse_context *ctx,
                      int opt_index)
 {
-    fprintf (stderr, "%s: Option", ctx->argv[0]);
+    LOGI (LOG_TAG, "%s: Option", ctx->argv[0]);
     nn_print_option (ctx, opt_index, stderr);
-    fprintf (stderr, "%s\n", message);
+    LOGI (LOG_TAG, "%s\n", message);
     exit (1);
 }
 
 
 static void nn_memory_error (struct nn_parse_context *ctx) {
-    fprintf (stderr, "%s: Memory error while parsing command-line",
+    LOGI (LOG_TAG, "%s: Memory error while parsing command-line",
         ctx->argv[0]);
     abort ();
 }
@@ -257,11 +266,11 @@ static void nn_invalid_enum_value (struct nn_parse_context *ctx,
 
     opt = &ctx->options[opt_index];
     items = (struct nn_enum_item *)opt->pointer;
-    fprintf (stderr, "%s: Invalid value ``%s'' for", ctx->argv[0], argument);
+    LOGI (LOG_TAG, "%s: Invalid value ``%s'' for", ctx->argv[0], argument);
     nn_print_option (ctx, opt_index, stderr);
-    fprintf (stderr, ". Options are:\n");
+    LOGI (LOG_TAG, ". Options are:\n");
     for (;items->name; ++items) {
-        fprintf (stderr, "    %s\n", items->name);
+        LOGI (LOG_TAG, "    %s\n", items->name);
     }
     exit (1);
 }
@@ -274,9 +283,9 @@ static void nn_option_conflict (struct nn_parse_context *ctx,
     int num_conflicts;
     struct nn_option *opt;
 
-    fprintf (stderr, "%s: Option", ctx->argv[0]);
+    LOGI (LOG_TAG, "%s: Option", ctx->argv[0]);
     nn_print_option (ctx, opt_index, stderr);
-    fprintf (stderr, "conflicts with the following options:\n");
+    LOGI (LOG_TAG, "conflicts with the following options:\n");
 
     mask = ctx->options[opt_index].conflicts_mask;
     num_conflicts = 0;
@@ -288,15 +297,15 @@ static void nn_option_conflict (struct nn_parse_context *ctx,
             continue;
         if (ctx->last_option_usage[i] && opt->mask_set & mask) {
             num_conflicts += 1;
-            fprintf (stderr, "   ");
+            LOGI (LOG_TAG, "   ");
             nn_print_option (ctx, i, stderr);
-            fprintf (stderr, "\n");
+            LOGI (LOG_TAG, "\n");
         }
     }
     if (!num_conflicts) {
-        fprintf (stderr, "   ");
+        LOGI (LOG_TAG, "   ");
         nn_print_option (ctx, opt_index, stderr);
-        fprintf (stderr, "\n");
+        LOGI (LOG_TAG, "\n");
     }
     exit (1);
 }
@@ -311,9 +320,9 @@ static void nn_print_requires (struct nn_parse_context *ctx, unsigned long mask)
         if (!opt->longname)
             break;
         if (opt->mask_set & mask) {
-            fprintf (stderr, "    --%s\n", opt->longname);
+            LOGI (LOG_TAG, "    --%s\n", opt->longname);
             if (opt->shortname) {
-                fprintf (stderr, "    -%c\n", opt->shortname);
+                LOGI (LOG_TAG, "    -%c\n", opt->shortname);
             }
         }
     }
@@ -321,9 +330,9 @@ static void nn_print_requires (struct nn_parse_context *ctx, unsigned long mask)
 }
 
 static void nn_option_requires (struct nn_parse_context *ctx, int opt_index) {
-    fprintf (stderr, "%s: Option", ctx->argv[0]);
+    LOGI (LOG_TAG, "%s: Option", ctx->argv[0]);
     nn_print_option (ctx, opt_index, stderr);
-    fprintf (stderr, "requires at least one of the following options:\n");
+    LOGI (LOG_TAG, "requires at least one of the following options:\n");
 
     nn_print_requires (ctx, ctx->options[opt_index].requires_mask);
     exit (1);
@@ -467,7 +476,7 @@ static void nn_process_option (struct nn_parse_context *ctx,
             } else {
                 file = fopen (argument, "r");
                 if (!file) {
-                    fprintf (stderr, "Error opening file ``%s'': %s\n",
+                    LOGI (LOG_TAG, "Error opening file ``%s'': %s\n",
                         argument, strerror (errno));
                     exit (2);
                 }
@@ -503,7 +512,7 @@ static void nn_process_option (struct nn_parse_context *ctx,
 #pragma warning (push)
 #pragma warning (disable:4996)
 #endif
-                fprintf (stderr, "Error reading file ``%s'': %s\n",
+                LOGI (LOG_TAG, "Error reading file ``%s'': %s\n",
                     argument, strerror (errno));
 #if defined _MSC_VER
 #pragma warning (pop)
@@ -556,11 +565,11 @@ static void nn_error_ambiguous_option (struct nn_parse_context *ctx)
     char *arg;
 
     arg = ctx->data+2;
-    fprintf (stderr, "%s: Ambiguous option ``%s'':\n", ctx->argv[0], ctx->data);
+    LOGI (LOG_TAG, "%s: Ambiguous option ``%s'':\n", ctx->argv[0], ctx->data);
     for (opt = ctx->options; opt->longname; ++opt) {
         for (a = opt->longname, b = arg; ; ++a, ++b) {
             if (*b == 0 || *b == '=') {  /* End of option on command-line */
-                fprintf (stderr, "    %s\n", opt->longname);
+                LOGI (LOG_TAG, "    %s\n", opt->longname);
                 break;
             } else if (*b != *a) {
                 break;
@@ -572,20 +581,20 @@ static void nn_error_ambiguous_option (struct nn_parse_context *ctx)
 
 static void nn_error_unknown_long_option (struct nn_parse_context *ctx)
 {
-    fprintf (stderr, "%s: Unknown option ``%s''\n", ctx->argv[0], ctx->data);
+    LOGI (LOG_TAG, "%s: Unknown option ``%s''\n", ctx->argv[0], ctx->data);
     exit (1);
 }
 
 static void nn_error_unexpected_argument (struct nn_parse_context *ctx)
 {
-    fprintf (stderr, "%s: Unexpected argument ``%s''\n",
+    LOGI (LOG_TAG, "%s: Unexpected argument ``%s''\n",
         ctx->argv[0], ctx->data);
     exit (1);
 }
 
 static void nn_error_unknown_short_option (struct nn_parse_context *ctx)
 {
-    fprintf (stderr, "%s: Unknown option ``-%c''\n", ctx->argv[0], *ctx->data);
+    LOGI (LOG_TAG, "%s: Unknown option ``-%c''\n", ctx->argv[0], *ctx->data);
     exit (1);
 }
 
@@ -735,7 +744,7 @@ void nn_check_requires (struct nn_parse_context *ctx) {
     }
 
     if ((ctx->requires & ctx->mask) != ctx->requires) {
-        fprintf (stderr, "%s: At least one of the following required:\n",
+        LOGI (LOG_TAG, "%s: At least one of the following required:\n",
             ctx->argv[0]);
         nn_print_requires (ctx, ctx->requires & ~ctx->mask);
         exit (1);

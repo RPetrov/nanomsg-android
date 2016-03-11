@@ -36,6 +36,15 @@
 
 #include <limits.h>
 
+#include <android/log.h>
+
+#define  LOG_TAG    "someTag"
+
+#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+#define  LOGW(...)  __android_log_print(ANDROID_LOG_WARN,LOG_TAG,__VA_ARGS__)
+#define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
+#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+
 /*  These bits specify whether individual efds are signalled or not at
     the moment. Storing this information allows us to avoid redundant signalling
     and unsignalling of the efd objects. */
@@ -55,6 +64,18 @@
 
 /*  Subordinated source objects. */
 #define NN_SOCK_SRC_EP 1
+
+#include <android/log.h>
+
+#define  LOG_TAG    "someTag"
+
+#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+#define  LOGW(...)  __android_log_print(ANDROID_LOG_WARN,LOG_TAG,__VA_ARGS__)
+#define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
+#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+
+
+
 
 /*  Private functions. */
 static struct nn_optset *nn_sock_optset (struct nn_sock *self, int id);
@@ -482,6 +503,9 @@ int nn_sock_add_ep (struct nn_sock *self, struct nn_transport *transport,
         nn_free (ep);
         nn_ctx_leave (&self->ctx);
         return rc;
+	
+	LOGI("nn_sock_add_ep, rerutn rc" );
+	
     }
     nn_ep_start (ep);
 
@@ -493,7 +517,7 @@ int nn_sock_add_ep (struct nn_sock *self, struct nn_transport *transport,
     nn_list_insert (&self->eps, &ep->item, nn_list_end (&self->eps));
 
     nn_ctx_leave (&self->ctx);
-
+LOGI("nn_sock_add_ep, eid = %d", eid );
     return eid;
 }
 
@@ -992,10 +1016,10 @@ void nn_sock_report_error (struct nn_sock *self, struct nn_ep *ep, int errnum)
         return;
 
     if(ep) {
-        fprintf(stderr, "nanomsg: socket.%s[%s]: Error: %s\n",
+        LOGI("nanomsg: socket.%s[%s]: Error: %s\n",
             self->socket_name, nn_ep_getaddr(ep), nn_strerror(errnum));
     } else {
-        fprintf(stderr, "nanomsg: socket.%s: Error: %s\n",
+        LOGI("nanomsg: socket.%s: Error: %s\n",
             self->socket_name, nn_strerror(errnum));
     }
 }

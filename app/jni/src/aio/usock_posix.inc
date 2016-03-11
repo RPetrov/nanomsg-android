@@ -65,6 +65,17 @@
 #define NN_USOCK_SRC_TASK_RECV 6
 #define NN_USOCK_SRC_TASK_STOP 7
 
+
+
+#include <android/log.h>
+
+#define  LOG_TAG    "someTag"
+
+#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+#define  LOGW(...)  __android_log_print(ANDROID_LOG_WARN,LOG_TAG,__VA_ARGS__)
+#define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
+#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+
 /*  Private functions. */
 static void nn_usock_init_from_fd (struct nn_usock *self, int s);
 static int nn_usock_send_raw (struct nn_usock *self, struct msghdr *hdr);
@@ -278,9 +289,16 @@ int nn_usock_bind (struct nn_usock *self, const struct sockaddr *addr,
     /*  Allow re-using the address. */
     opt = 1;
     rc = setsockopt (self->s, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof (opt));
+    
+    
+    LOGD( "setsockopt result   %d", rc );
+    
     errno_assert (rc == 0);
 
     rc = bind (self->s, addr, (socklen_t) addrlen);
+    
+      LOGD( "bind result   %d", rc );
+    
     if (nn_slow (rc != 0))
         return -errno;
 
