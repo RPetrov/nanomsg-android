@@ -127,6 +127,28 @@ int nn_poll (struct nn_pollfd *fds, int nfds, int timeout)
 #include <poll.h>
 #include <stddef.h>
 
+
+int safe_poll(struct pollfd *ufds, nfds_t nfds, int timeout)
+{
+	while (1) {
+		int n = poll(ufds, nfds, timeout);
+		if (n >= 0)
+			return n;
+		/* Make sure we inch towards completion */
+		if (timeout > 0)
+			timeout--;
+		/* E.g. strace causes poll to return this */
+		if (errno == EINTR)
+			continue;
+		/* Kernel is very low on memory. Retry. */
+		/* I doubt many callers would handle this correctly! */
+		if (errno == ENOMEM)
+			continue;
+		return n;
+	}
+}
+
+
 int nn_poll (struct nn_pollfd *fds, int nfds, int timeout)
 {
     int rc;
@@ -171,7 +193,7 @@ int nn_poll (struct nn_pollfd *fds, int nfds, int timeout)
     }    
 
     /*  Do the polling itself. */
-    rc = poll (pfd, pos, timeout);
+    rc = safe_poll (pfd, pos, timeout);
     if (nn_slow (rc <= 0)) {
         res = errno;
         nn_free (pfd);
